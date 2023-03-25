@@ -3,7 +3,7 @@
 ## [7.19.2] - 2023-03-25
 
 - Add support to Cisco IOS `cisco_ios` and Arista EOS `arista_eos`.
-- Add indentation to JSON output logs.
+- Add indentation to JSON output logs. 
 
 
 ## [7.19.1] - 2023-02-09
