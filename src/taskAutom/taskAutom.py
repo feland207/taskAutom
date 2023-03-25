@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # Copyright (C) 2015-2022 Lucas Aimaretto / laimaretto@gmail.com
+# Copyright (C) 2022-2023 Felix Andre / felix.andre86@gmail.com
 #
 # This is taskAutom
 #
@@ -116,6 +117,44 @@ DICT_VENDOR = dict(
 		MINOR_ERROR_LIST = ["^MINOR:.+"],
 		INFO_ERROR_LIST  = ["^INFO:.+"],
 		REMOTE_PORT      = 23,
+		SFTP_PORT        = 22,
+	),
+	cisco_ios=dict(
+		START_SCRIPT     = "", 
+		FIRST_LINE       = "terminal length 0\n",
+		LAST_LINE        = "",
+		FIN_SCRIPT       = "",
+		VERSION 	     = "show version",
+		VERSION_REGEX    = "\s+System version:\s(\S+)",
+		HOSTNAME         = "show running-config | i hostname",
+		HOSTNAME_REGEX   = "(?<=hostname )(\S+)",
+		HW_TYPE          = "show version | section Hardware",
+		HW_TYPE_REGEX    = "\s+cisco\s(\S+\s\S+)",
+		SHOW             = "",
+		SEND_CMD_REGEX   = None,
+		MAJOR_ERROR_LIST = ["^.+Invalid.+"],
+		MINOR_ERROR_LIST = [],
+		INFO_ERROR_LIST  = [],
+		REMOTE_PORT      = 22,
+		SFTP_PORT        = 22,
+	),
+	arista_eos=dict(
+		START_SCRIPT     = "", 
+		FIRST_LINE       = "terminal length 0\n",
+		LAST_LINE        = "",		# no end line for this vendor
+		FIN_SCRIPT       = "",
+		VERSION 	     = "show version",
+		VERSION_REGEX    = "Software image version:\s(\S+)",
+		HOSTNAME         = "show running-config | i hostname",
+		HOSTNAME_REGEX   = "(?<=hostname )(\S+)",
+		HW_TYPE          = "show version | i Arista",
+		HW_TYPE_REGEX    = "Arista (\S+)",
+		SHOW             = "",
+		SEND_CMD_REGEX   = None,
+		MAJOR_ERROR_LIST = ["%\sInvalid\sinput"],
+		MINOR_ERROR_LIST = [],
+		INFO_ERROR_LIST  = [],
+		REMOTE_PORT      = 22,
 		SFTP_PORT        = 22,
 	),
 )
@@ -249,7 +288,7 @@ def fncPrintResults(listOfRouters, timeTotalStart, dictParam):
 			if len(dictParam['inventory']) > 0:
 				for ip in dictParam['inventory']:
 					dictParam['inventory'][ip]['password'] = '*****'
-			json.dump(dictParam, f)
+			json.dump(dictParam, f, indent=4, sort_keys=True)		# json.dump(dictParam, f, indent=4, sort_keys=True)
 			f.close()
 
 	outTxt = outTxt + separator + '\n'
@@ -1477,7 +1516,7 @@ class myConnection():
 							with open(aluFileOutRxJson,'w') as fj:
 								outRxJson['name'] = connInfo['hostname']
 								outRxJson['ip']   = connInfo['systemIP']
-								json.dump(outRxJson,fj)
+								json.dump(outRxJson,fj, indent=4, sort_keys=True)
 								fj.close()
 								writeJson = 'yes'
 						except Exception as e:
@@ -1490,7 +1529,7 @@ class myConnection():
 								fj.close()
 							with open(aluFileOutRxJson,'w') as fj:
 								outRxJson = dict(list(outRxJson.items()) + list(data.items()))
-								json.dump(outRxJson,fj)
+								json.dump(outRxJson,fj, indent=4, sort_keys=True)
 								fj.close()
 							writeJson = 'yes'
 						except Exception as e:
@@ -1698,7 +1737,7 @@ def createLogFolder(dictParam):
 def getDictParam():
 
 	parser = argparse.ArgumentParser(description='taskAutom Parameters.', prog='taskAutom', usage='%(prog)s [options]')
-	parser.add_argument('-v'  ,'--version',     help='Version', action='version', version='Lucas Aimaretto - (c)2023 - laimaretto@gmail.com - Version: 7.19.1' )
+	parser.add_argument('-v'  ,'--version',     help='Version', action='version', version='Lucas Aimaretto / Felix Andre - (c)2023 - Version: 7.19.2\n' )
 
 	groupJobTypes = parser.add_argument_group('JobTypes')
 	groupJobTypes.add_argument('-j'  ,'--jobType',       type=int, required=True, choices=[0,2,3], default=0, help='Type of job. j=0 to check data and plugin; j=2, to execute. j=3, to upload files via SCP/SFTP.')
@@ -1726,7 +1765,7 @@ def getDictParam():
 	connGroup.add_argument('-th' ,'--threads' ,      type=int, help='Number of threads. Default=1', default=1,)
 	connGroup.add_argument('-tun','--sshTunnel',     type=str, help='Use SSH Tunnel to routers. Default=yes', default='yes', choices=['no','yes'])
 	connGroup.add_argument('-jh' ,'--jumpHostsFile', type=str, help='jumpHosts file. Default=servers.yml', default='servers.yml')
-	connGroup.add_argument('-dt', '--deviceType',    type=str, help='Device Type. Default=nokia_sros', default='nokia_sros', choices=['nokia_sros','md_nokia_sros','nokia_sros_telnet'])
+	connGroup.add_argument('-dt', '--deviceType',    type=str, help='Device Type. Default=nokia_sros', default='nokia_sros', choices=['nokia_sros','md_nokia_sros','nokia_sros_telnet','cisco_ios','arista_eos'])
 	connGroup.add_argument('-cv', '--cmdVerify',     type=str, help='Enable --cmdVerify when interacting with router. Disable only if connection problems. Default=yes', default='yes', choices=['no','yes'])
 	connGroup.add_argument('-rto' ,'--readTimeOut',  type=int, help='Read Timeout. Time in seconds which to wait for data from router. Default=10', default=10,)
 	connGroup.add_argument('-tbr' ,'--timeBetweenRouters',  type=int, help='Time to wait between routers, in miliseconds (ms), before sending scripts to the router. Default=0', default=0,)
